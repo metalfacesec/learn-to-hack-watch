@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include<random>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -13,12 +14,6 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-std::vector<String> menuOptions;
-int selectedMenuItemIndex = 0;
-
-int lastLeftButtonRead = 0;
-int lastRightButtonRead = 0;
-
 enum GameState { main_menu, hacker_trivia };
 GameState currentGameState = main_menu;
 
@@ -31,7 +26,22 @@ typedef struct {
   float lastRightLongPressRelease;
 } ButtonPressManager;
 
-ButtonPressManager buttonPressManager = { 0, 0, millis(), millis() };
+typedef struct {
+  String question;
+  String choice1;
+  String choice2;
+  String choice3;
+  String choice4;
+  int difficulty;
+} hackerTriviaQuestion;
+
+std::vector<String> menuOptions;
+std::vector<hackerTriviaQuestion> hackerTriviaQuestions;
+int selectedMenuItemIndex = 0;
+
+int lastLeftButtonRead = 0;
+int lastRightButtonRead = 0;
+ButtonPressManager buttonPressManager = { 0, 0, 0, 0, 0, 0 };
 
 boolean wasButtonReleased(bool isRight, int reading) {
   if (lastRightButtonRead == 1 && reading == 0 && isRight) {
@@ -78,9 +88,16 @@ void showSelectGameMenu() {
 void showHackerChallenge() {
   display.clearDisplay();
 
-  display.setCursor(0, 6);
-  display.println("What is hacking?");
+  int randomIndex = random(0, hackerTriviaQuestions.size() - 1);
 
+  display.setCursor(0, 6);
+  display.println(hackerTriviaQuestions[randomIndex].question);
+
+  display.setCursor(0, MENU_ITEM_START_ROW + MENU_ITEM_SPACE);
+  display.println(hackerTriviaQuestions[randomIndex].choice1);
+  display.setCursor(0, MENU_ITEM_START_ROW + (2 * MENU_ITEM_SPACE));
+  display.println(hackerTriviaQuestions[randomIndex].choice2);
+  
   display.display();
 }
 
@@ -89,11 +106,39 @@ void setupMenuItems() {
   menuOptions.push_back("Placeholder Game");
 }
 
+void setupHackerTriviaItems() {
+  hackerTriviaQuestions.push_back({
+    "Test Question?",
+    "Answer 1",
+    "Answer 2",
+    "Answer 3",
+    "Answer 4",
+    1
+  });
+  hackerTriviaQuestions.push_back({
+    "Define bruteforce attack?",
+    "Answer 1",
+    "Answer 2",
+    "Answer 3",
+    "Answer 4",
+    1
+  });
+  hackerTriviaQuestions.push_back({
+    "Define SQL injection?",
+    "Answer 1",
+    "Answer 2",
+    "Answer 3",
+    "Answer 4",
+    1
+  });
+}
+
 void setup() {
   Serial.begin(115200);
 
   setupDisplay();
   setupMenuItems();
+  setupHackerTriviaItems();
   showSelectGameMenu();
 }
 
