@@ -9,6 +9,7 @@
 #define BUTTON_RIGHT_GPIO 2
 #define MENU_ITEM_SPACE 10
 #define MENU_ITEM_START_ROW 16
+#define BUTTON_LONG_PRESS 400
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -21,6 +22,17 @@ int lastRightButtonRead = 0;
 enum GameState { main_menu, hacker_trivia };
 GameState currentGameState = main_menu;
 
+typedef struct {
+  int lastLeftRead;
+  int lastRightRead;
+  float lastLeftPressTime;
+  float lastRightPressTime;
+  float lastLeftLongPressRelease;
+  float lastRightLongPressRelease;
+} ButtonPressManager;
+
+ButtonPressManager buttonPressManager = { 0, 0, millis(), millis() };
+
 boolean wasButtonReleased(bool isRight, int reading) {
   if (lastRightButtonRead == 1 && reading == 0 && isRight) {
     return true;
@@ -31,9 +43,9 @@ boolean wasButtonReleased(bool isRight, int reading) {
 }
 
 void setupDisplay() {
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
+    for (;;);
   }
 
   display.setTextSize(1);
@@ -56,10 +68,19 @@ void showSelectGameMenu() {
       finalOption += "[ ]";
     }
     finalOption += menuOptions[i];
-    
+
     display.println(finalOption);
   }
-  
+
+  display.display();
+}
+
+void showHackerChallenge() {
+  display.clearDisplay();
+
+  display.setCursor(0, 6);
+  display.println("What is hacking?");
+
   display.display();
 }
 
@@ -73,15 +94,94 @@ void setup() {
 
   setupDisplay();
   setupMenuItems();
-
-  switch(currentGameState) {
-    case main_menu  : showSelectGameMenu(); break;
-  }
+  showSelectGameMenu();
 }
 
 void loop() {
+  boolean leftPressed = false;
+  boolean leftLongPressed = false;
+  boolean rightPressed = false;
+  boolean rightLongPressed = false;
   int leftButtonRead = digitalRead(BUTTON_LEFT_GPIO);
   int rightButtonRead = digitalRead(BUTTON_RIGHT_GPIO);
+  
+  if (leftButtonRead == 1 && buttonPressManager.lastLeftRead == 0) {
+    buttonPressManager.lastLeftPressTime = millis();
+  }
+  if (leftButtonRead == 0 && buttonPressManager.lastLeftRead == 1) {
+    float heldTime = millis() - buttonPressManager.lastLeftPressTime;
+    if (heldTime > BUTTON_LONG_PRESS) {
+      leftLongPressed = true;
+    } else {
+      leftPressed = true;
+    }
+    if (heldTime == 0) {
+      leftLongPressed = false;
+      leftPressed = false;
+    }
+  }
+  
+  if (rightButtonRead == 1 && buttonPressManager.lastRightRead == 0) {
+    buttonPressManager.lastRightPressTime = millis();
+  }
+  if (rightButtonRead == 0 && buttonPressManager.lastRightRead == 1) {
+    float heldTimeRight = millis() - buttonPressManager.lastRightPressTime;
+    if (heldTimeRight > BUTTON_LONG_PRESS) {
+      rightLongPressed = true;
+    } else {
+      rightPressed = true;
+    }
+    if (heldTimeRight == 0) {
+      rightLongPressed = false;
+      rightPressed = false;
+    }
+  }
+  
+  buttonPressManager.lastLeftRead = leftButtonRead;
+  buttonPressManager.lastRightRead = rightButtonRead;
+
+  switch (currentGameState) {
+    case main_menu:
+      if (rightLongPressed || leftLongPressed) {
+        if (selectedMenuItemIndex == 0) {
+          currentGameState = hacker_trivia;
+          showHackerChallenge();
+        }
+      } else if (rightPressed) {
+        if (selectedMenuItemIndex < menuOptions.size() - 1) {
+          selectedMenuItemIndex++;
+          showSelectGameMenu();
+        }
+      } else if (leftPressed) {
+        if (selectedMenuItemIndex > 0) {
+          selectedMenuItemIndex--;
+          showSelectGameMenu();
+        }
+      }
+      break;
+    case hacker_trivia:
+      break;
+  }
+  
+  if (leftLongPressed) {
+    buttonPressManager.lastLeftLongPressRelease = millis();
+  }
+  if (rightLongPressed) {
+    buttonPressManager.lastRightLongPressRelease = millis();
+  }
+  if (millis() - buttonPressManager.lastLeftLongPressRelease > 50) {
+    buttonPressManager.lastLeftLongPressRelease = 0;
+  }
+  if (millis() - buttonPressManager.lastRightLongPressRelease > 50) {
+    buttonPressManager.lastRightLongPressRelease = 0ll;
+  }
+  if (buttonPressManager.lastRightLongPressRelease != 0 && buttonPressManager.lastLeftLongPressRelease != 0) {
+    buttonPressManager.lastRightLongPressRelease = 0;
+    buttonPressManager.lastLeftLongPressRelease = 0;
+
+    currentGameState = main_menu;
+    showSelectGameMenu();
+  }
   
   lastRightButtonRead = rightButtonRead;
   lastLeftButtonRead = leftButtonRead;
