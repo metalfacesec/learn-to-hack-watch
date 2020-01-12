@@ -10,8 +10,10 @@
 #define MENU_ITEM_SPACE 10
 #define MENU_ITEM_START_ROW 16
 
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+std::vector<String> menuOptions;
+int selectedMenuItemIndex = 0;
 
 int lastLeftButtonRead = 0;
 int lastRightButtonRead = 0;
@@ -39,27 +41,38 @@ void setupDisplay() {
 }
 
 void showSelectGameMenu() {
-  String menuOption1 = "Hacker Trivia";
-  String menuOption2 = "Placeholder Game";
-  
   display.clearDisplay();
 
   display.setCursor(0, 6);
   display.println("Select A Game");
 
-  display.setCursor(0, MENU_ITEM_START_ROW);
-  display.println("Hacker Trivia");
+  for (int i = 0; i < menuOptions.size(); i++) {
+    display.setCursor(0, MENU_ITEM_START_ROW + (i * MENU_ITEM_SPACE));
 
-  display.setCursor(0, MENU_ITEM_START_ROW + MENU_ITEM_SPACE);
-  display.println("Placeholder Game");
+    String finalOption = "";
+    if (i == selectedMenuItemIndex) {
+      finalOption += "[*]";
+    } else {
+      finalOption += "[ ]";
+    }
+    finalOption += menuOptions[i];
+    
+    display.println(finalOption);
+  }
   
   display.display();
 }
 
+void setupMenuItems() {
+  menuOptions.push_back("Hacker Trivia");
+  menuOptions.push_back("Placeholder Game");
+}
+
 void setup() {
   Serial.begin(115200);
-  
+
   setupDisplay();
+  setupMenuItems();
 
   switch(currentGameState) {
     case main_menu  : showSelectGameMenu(); break;
