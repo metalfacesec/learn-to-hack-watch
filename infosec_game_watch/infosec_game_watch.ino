@@ -14,7 +14,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-enum GameState { main_menu, hacker_trivia };
+enum GameState { main_menu, hacker_trivia, scroll_text };
 GameState currentGameState = main_menu;
 
 typedef struct {
@@ -27,6 +27,14 @@ typedef struct {
 } ButtonPressManager;
 
 typedef struct {
+  String text;
+  int x;
+  int y;
+  int maxCharacters;
+  int xCurrent;
+} ScrollableText;
+
+typedef struct {
   String question;
   String choice1;
   String choice2;
@@ -37,8 +45,10 @@ typedef struct {
 
 std::vector<String> menuOptions;
 std::vector<hackerTriviaQuestion> hackerTriviaQuestions;
+std::vector<ScrollableText> scrollableTextOnScreen;
 int selectedMenuItemIndex = 0;
 
+float lastTextScroll = millis();
 int lastLeftButtonRead = 0;
 int lastRightButtonRead = 0;
 ButtonPressManager buttonPressManager = { 0, 0, 0, 0, 0, 0 };
@@ -64,7 +74,7 @@ void setupDisplay() {
 
 void showSelectGameMenu() {
   display.clearDisplay();
-
+  
   display.setCursor(0, 6);
   display.println("Select A Game");
 
@@ -191,6 +201,17 @@ void loop() {
         if (selectedMenuItemIndex == 0) {
           currentGameState = hacker_trivia;
           showHackerChallenge();
+        } else if (selectedMenuItemIndex == 1) {
+          currentGameState = scroll_text;
+          scrollableTextOnScreen.clear();
+          ScrollableText st = {
+            "This is a test of a long question scrolling on the top?",
+            0,
+            6,
+            20,
+            0
+          };
+          scrollableTextOnScreen.push_back(st);
         }
       } else if (rightPressed) {
         if (selectedMenuItemIndex < menuOptions.size() - 1) {
@@ -218,9 +239,11 @@ void loop() {
     buttonPressManager.lastLeftLongPressRelease = 0;
   }
   if (millis() - buttonPressManager.lastRightLongPressRelease > 50) {
-    buttonPressManager.lastRightLongPressRelease = 0ll;
+    buttonPressManager.lastRightLongPressRelease = 0;
   }
   if (buttonPressManager.lastRightLongPressRelease != 0 && buttonPressManager.lastLeftLongPressRelease != 0) {
+    scrollableTextOnScreen.clear();
+    
     buttonPressManager.lastRightLongPressRelease = 0;
     buttonPressManager.lastLeftLongPressRelease = 0;
 
@@ -230,4 +253,23 @@ void loop() {
   
   lastRightButtonRead = rightButtonRead;
   lastLeftButtonRead = leftButtonRead;
+
+  // Display Scrollable Text
+  if (scrollableTextOnScreen.size() && millis() - lastTextScroll > 200) {
+    display.clearDisplay();
+    
+    for (int i = 0; i < scrollableTextOnScreen.size(); i++) {
+      String choppedString = scrollableTextOnScreen[i].text.substring(scrollableTextOnScreen[i].xCurrent, scrollableTextOnScreen[i].xCurrent + scrollableTextOnScreen[i].maxCharacters);
+      display.setCursor(scrollableTextOnScreen[i].x, scrollableTextOnScreen[i].y);
+      display.println(choppedString);
+
+      scrollableTextOnScreen[i].xCurrent++;
+      if (scrollableTextOnScreen[i].xCurrent > scrollableTextOnScreen[i].text.length()) {
+        scrollableTextOnScreen[i].xCurrent = 0;
+      }
+    }
+    display.display();
+    
+    lastTextScroll = millis();
+  }
 }
