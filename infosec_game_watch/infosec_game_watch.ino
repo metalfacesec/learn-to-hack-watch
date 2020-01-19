@@ -34,6 +34,12 @@ void mainMenuLoop() {
       buttonManager.rightPressed = 0;
       buttonManager.lastRightButtonPressedTime = 0;
       buttonManager.lastLeftButtonPressedTime = 0;
+
+      switch(getSelectedMenuIndex()) {
+        case 1: currentGameState = hacker_trivia; break;
+        case 2: currentGameState = hacker_trivia; break;
+      }
+      
       draw();
     } else if (buttonManager.leftPressed == 1) {
       menuCursorMoveDown();
@@ -42,6 +48,32 @@ void mainMenuLoop() {
       draw();
     } else if (buttonManager.rightPressed == 1) {
       menuCursorMoveUp();
+      buttonManager.rightPressed = 0;
+      buttonManager.lastRightButtonPressedTime = 0;
+      draw();
+    }
+  }
+}
+
+void hackerTriviaLoop() {
+  if (millis() - lastButtonPressCheck > 50) {
+    lastButtonPressCheck = millis();
+    if (buttonManager.leftPressed == 1 && buttonManager.rightPressed == 1) {
+      buttonManager.leftPressed = 0;
+      buttonManager.rightPressed = 0;
+      buttonManager.lastRightButtonPressedTime = 0;
+      buttonManager.lastLeftButtonPressedTime = 0;
+
+      currentGameState = main_menu;
+      
+      draw();
+    } else if (buttonManager.leftPressed == 1) {
+      currentGameState = main_menu;
+      buttonManager.leftPressed = 0;
+      buttonManager.lastLeftButtonPressedTime = 0;
+      draw();
+    } else if (buttonManager.rightPressed == 1) {
+      currentGameState = main_menu;
       buttonManager.rightPressed = 0;
       buttonManager.lastRightButtonPressedTime = 0;
       draw();
@@ -63,5 +95,6 @@ void loop() {
   
   switch (currentGameState) {
     case main_menu: mainMenuLoop(); break;
+    case hacker_trivia: hackerTriviaLoop(); break;
   }
 }

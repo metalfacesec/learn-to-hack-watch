@@ -29,7 +29,7 @@ void updateButtonPresses() {
     buttonManager.lastLeftButtonPressedTime = millis();
   }
   buttonManager.leftPressed = 0;
-  if (millis() - buttonManager.lastLeftButtonPressedTime < 50) {
+  if (millis() - buttonManager.lastLeftButtonPressedTime < 510) {
     buttonManager.leftPressed = 1;
   }
 
@@ -39,7 +39,7 @@ void updateButtonPresses() {
     buttonManager.lastRightButtonPressedTime = millis();
   }
   buttonManager.rightPressed = 0;
-  if (millis() - buttonManager.lastRightButtonPressedTime < 50) {
+  if (millis() - buttonManager.lastRightButtonPressedTime < 150) {
     buttonManager.rightPressed = 1;
   }
 

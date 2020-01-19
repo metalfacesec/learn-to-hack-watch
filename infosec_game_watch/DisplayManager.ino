@@ -21,6 +21,10 @@ void menuCursorMoveDown() {
   }
 }
 
+int getSelectedMenuIndex() {
+  return selectedMenuItemIndex;
+}
+
 void setupDisplay() {
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -48,11 +52,17 @@ void drawMenuDisplay() {
   }
 }
 
+void drawHackerTrivia() {
+  display.setCursor(0, 6);
+  display.println("Hacker Trivia");
+}
+
 void draw() {
   display.clearDisplay();
 
   switch (currentGameState) {
     case main_menu: drawMenuDisplay(); break;
+    case hacker_trivia: drawHackerTrivia(); break;
   }
    
   display.display();
