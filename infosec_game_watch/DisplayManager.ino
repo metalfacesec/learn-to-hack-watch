@@ -15,10 +15,26 @@ void menuCursorMoveUp() {
   }
 }
 
+void hackerTriviaCursorMoveUp() {
+  if (selectedMenuItemIndex < currentQuestion.answers.size()) {
+    selectedMenuItemIndex++;
+  }
+}
+
+void hackerTriviaCursorMoveDown() {
+  if (selectedMenuItemIndex > 0) {
+    selectedMenuItemIndex--;
+  }
+}
+
 void menuCursorMoveDown() {
   if (selectedMenuItemIndex > 1) {
     selectedMenuItemIndex--;
   }
+}
+
+void setSelectedMenuIndex(int index) {
+  selectedMenuItemIndex = index; 
 }
 
 int getSelectedMenuIndex() {
@@ -54,7 +70,19 @@ void drawMenuDisplay() {
 
 void drawHackerTrivia() {
   display.setCursor(0, 6);
-  display.println("Hacker Trivia");
+  display.println(currentQuestion.question.substring(0, 21));
+
+  for (int i = 0; i < currentQuestion.answers.size(); i++) {
+    display.setCursor(0, MENU_ITEM_START_ROW + (i * MENU_ITEM_SPACE));
+    
+    String finalOption = "[ ]";
+    if (i == selectedMenuItemIndex) {
+      finalOption = "[*]";
+    }
+    finalOption += currentQuestion.answers[i].substring(0, 18);
+    
+    display.println(finalOption);
+  }
 }
 
 void draw() {
